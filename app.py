@@ -6,128 +6,352 @@ import streamlit as st
 from resumeAnalyzer import (
     ReadResume,
     parse_resume,
-    final_score
+    final_score,
 )
+
+# -------------------------------------------------
+# PAGE CONFIG
+# -------------------------------------------------
 
 st.set_page_config(
-    page_title="AI Resume Analyzer",
+    page_title="HireLens AI",
     page_icon="📄",
-    layout="wide"
+    layout="wide",
 )
 
-st.title("📄 AI Resume Analyzer")
+# -------------------------------------------------
+# CUSTOM CSS
+# -------------------------------------------------
 
-st.write("Upload your resume and paste the Job Description.")
+st.markdown("""
+<style>
 
-uploaded_resume = st.file_uploader(
-    "Upload Resume",
-    type=["pdf", "docx"]
+[data-testid="stAppViewContainer"]{
+    background:#0f172a;
+}
+
+.block-container{
+    padding-top:2rem;
+    padding-bottom:2rem;
+}
+
+.title{
+font-size:52px;
+font-weight:800;
+text-align:center;
+background:linear-gradient(90deg,#4F46E5,#06B6D4);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.subtitle{
+text-align:center;
+font-size:18px;
+color:#94a3b8;
+margin-bottom:35px;
+}
+
+.card{
+background:#1e293b;
+padding:25px;
+border-radius:18px;
+box-shadow:0px 6px 25px rgba(0,0,0,.25);
+margin-bottom:20px;
+}
+
+.metric{
+font-size:55px;
+font-weight:bold;
+text-align:center;
+color:#38bdf8;
+}
+
+.small{
+font-size:16px;
+font-weight:600;
+color:white;
+text-align:center;
+margin-bottom:15px;
+}
+
+.footer{
+text-align:center;
+color:gray;
+margin-top:40px;
+}
+
+.stButton>button{
+width:100%;
+background:linear-gradient(90deg,#4F46E5,#7C3AED);
+color:white;
+border:none;
+padding:14px;
+border-radius:12px;
+font-size:18px;
+font-weight:bold;
+}
+
+.stButton>button:hover{
+background:linear-gradient(90deg,#4338CA,#6D28D9);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------------------------------------
+# HEADER
+# -------------------------------------------------
+
+st.markdown(
+    "<div class='title'>HireLens AI</div>",
+    unsafe_allow_html=True,
 )
 
-job_desc = st.text_area(
-    "Paste Job Description",
-    height=250,
-    placeholder="Paste the complete Job Description here..."
+st.markdown(
+    "<div class='subtitle'>AI Resume Analyzer & ATS Score Checker</div>",
+    unsafe_allow_html=True,
 )
 
-if st.button("🚀 Analyze Resume"):
+# -------------------------------------------------
+# FILE UPLOADER
+# -------------------------------------------------
 
-    if uploaded_resume is None:
-        st.error("Please upload your resume.")
-        st.stop()
+uploaded_file = st.file_uploader(
+    "📄 Upload Resume",
+    type=["pdf", "docx"],
+)
 
-    if job_desc.strip() == "":
-        st.error("Please enter a Job Description.")
-        st.stop()
+# -------------------------------------------------
+# ANALYZE BUTTON
+# -------------------------------------------------
 
-    with st.spinner("Analyzing Resume..."):
+if uploaded_file is not None:
 
-        suffix = Path(uploaded_resume.name).suffix
+    suffix = Path(uploaded_file.name).suffix
 
-        with tempfile.NamedTemporaryFile(
-            delete=False,
-            suffix=suffix
-        ) as temp:
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=suffix
+    ) as temp:
 
-            temp.write(uploaded_resume.getvalue())
-            temp_path = Path(temp.name)
+        temp.write(uploaded_file.getvalue())
 
-        resume_text = ReadResume(temp_path)
+        temp_path = Path(temp.name)
 
-        parsed_resume = parse_resume(resume_text)
+    if st.button("🚀 Analyze Resume"):
 
-        analysis = final_score(
-            parsed_resume,
-            job_desc
-        )
+        with st.spinner("Analyzing your resume..."):
 
-    st.success("Analysis Completed Successfully!")
+            try:
 
-    st.divider()
+                resume_text = ReadResume(temp_path)
 
-    score = analysis.matchingScore
+                parsed_resume = parse_resume(resume_text)
 
-    st.subheader("🎯 Overall Match")
+                analysis = final_score(parsed_resume)
 
-    st.metric(
-        label="Resume Match",
-        value=f"{score}%"
-    )
+                st.success("Analysis Completed Successfully!")
 
-    st.progress(score)
+                st.divider()
 
-    st.divider()
+                left, right = st.columns([1, 2])
 
-    col1, col2 = st.columns(2)
+                # --------------------------
+                # ATS SCORE
+                # --------------------------
 
-    with col1:
+                with left:
 
-        st.subheader("👤 Personal Details")
+                    st.markdown(
+                        "<div class='card'>",
+                        unsafe_allow_html=True,
+                    )
 
-        st.write(f"**Name:** {analysis.personalDetails.name}")
-        st.write(f"**Email:** {analysis.personalDetails.email}")
-        st.write(f"**Phone:** {analysis.personalDetails.phone}")
+                    st.markdown(
+                        "<div class='small'>ATS Score</div>",
+                        unsafe_allow_html=True,
+                    )
 
-        if analysis.personalDetails.location:
-            st.write(f"**Location:** {analysis.personalDetails.location}")
+                    st.markdown(
+                        f"<div class='metric'>{analysis.overallPercentage}%</div>",
+                        unsafe_allow_html=True,
+                    )
 
-    with col2:
+                    st.progress(
+                        analysis.overallPercentage / 100
+                    )
 
-        st.subheader("📊 Score Breakdown")
+                    st.markdown(
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
 
-        st.write("Skills")
-        st.progress(analysis.scoreBreakdown.skills)
+                # --------------------------
+                # PERSONAL DETAILS
+                # --------------------------
 
-        st.write("Experience")
-        st.progress(analysis.scoreBreakdown.experience)
+                with right:
 
-        st.write("Education")
-        st.progress(analysis.scoreBreakdown.education)
+                    st.markdown(
+                        "<div class='card'>",
+                        unsafe_allow_html=True,
+                    )
 
-        st.write("Projects")
-        st.progress(analysis.scoreBreakdown.projects)
+                    st.subheader("👤 Candidate Details")
 
-    st.divider()
+                    c1, c2 = st.columns(2)
 
-    st.subheader("❌ Missing Skills")
+                    with c1:
 
-    if analysis.missingSkills:
+                        st.write("**Name**")
+                        st.write(
+                            analysis.personalDetails.name
+                        )
 
-        for skill in analysis.missingSkills:
-            st.error(skill)
+                        st.write("**Email**")
+                        st.write(
+                            analysis.personalDetails.email
+                        )
 
-    else:
+                    with c2:
 
-        st.success("No Missing Skills Found 🎉")
+                        st.write("**Phone**")
+                        st.write(
+                            analysis.personalDetails.phone
+                        )
 
-    st.divider()
+                        st.write("**Location**")
+                        st.write(
+                            analysis.personalDetails.location
+                        )
 
-    st.subheader("📝 Final Verdict")
+                    st.markdown(
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
 
-    st.info(analysis.finalVerdict)
+                st.divider()
 
-    # with st.expander("📄 Parsed Resume"):
-    #     st.write(parsed_resume)
+                # --------------------------
+                # BREAKDOWN
+                # --------------------------
 
-    with st.expander("🧾 Complete Analysis"):
-        st.json(analysis.model_dump())
+                st.subheader("📊 Score Breakdown")
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.metric(
+                        "Skills",
+                        analysis.scoreBreakdown.skills,
+                    )
+
+                    st.progress(
+                        analysis.scoreBreakdown.skills / 100
+                    )
+
+                    st.metric(
+                        "Projects",
+                        analysis.scoreBreakdown.projects,
+                    )
+
+                    st.progress(
+                        analysis.scoreBreakdown.projects / 100
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "Experience",
+                        analysis.scoreBreakdown.experience,
+                    )
+
+                    st.progress(
+                        analysis.scoreBreakdown.experience / 100
+                    )
+
+                    st.metric(
+                        "Education",
+                        analysis.scoreBreakdown.education,
+                    )
+
+                    st.progress(
+                        analysis.scoreBreakdown.education / 100
+                    )
+
+                st.divider()
+
+                # --------------------------
+                # MISSING SKILLS
+                # --------------------------
+
+                st.subheader("❌ Missing Skills")
+
+                if analysis.missingSkills:
+
+                    cols = st.columns(3)
+
+                    for i, skill in enumerate(
+                        analysis.missingSkills
+                    ):
+
+                        cols[i % 3].info(skill)
+
+                else:
+
+                    st.success(
+                        "No missing skills detected!"
+                    )
+
+                st.divider()
+
+                # --------------------------
+                # VERDICT
+                # --------------------------
+
+                st.subheader("📝 Final Verdict")
+
+                if analysis.overallPercentage >= 80:
+
+                    st.success("🎉 Excellent Match")
+
+                elif analysis.overallPercentage >= 60:
+
+                    st.warning("👍 Good Match")
+
+                else:
+
+                    st.error("⚠ Needs Improvement")
+
+                st.write(analysis.finalVerdict)
+
+                # --------------------------
+                # RAW JSON
+                # --------------------------
+
+                with st.expander(
+                    "🔍 View Raw JSON"
+                ):
+
+                    st.json(
+                        analysis.model_dump()
+                    )
+
+            except Exception as e:
+
+                st.error(f"❌ {e}")
+
+            finally:
+
+                if temp_path.exists():
+                    temp_path.unlink()
+
+st.markdown(
+    """
+<div class='footer'>
+Built with ❤️ using Streamlit • Groq • Pydantic • Python
+</div>
+""",
+    unsafe_allow_html=True,
+)
