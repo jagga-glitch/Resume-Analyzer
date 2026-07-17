@@ -32,6 +32,7 @@ model = "llama-3.3-70b-versatile"
 # Pydantic Models
 # ----------------------------
 
+
 class JobDesc(BaseModel):
     role: str
     requiredSkills: str
@@ -91,13 +92,13 @@ ResumeSchema = Resume.model_json_schema()
 # Resume Reader
 # ----------------------------
 
+
 def ReadResume(file_path: Path):
 
     if not file_path.exists():
         raise FileNotFoundError(f"{file_path} does not exist.")
 
     if file_path.suffix.lower() == ".pdf":
-
         reader = PdfReader(file_path)
 
         text = ""
@@ -108,13 +109,9 @@ def ReadResume(file_path: Path):
         return text
 
     elif file_path.suffix.lower() == ".docx":
-
         doc = Document(file_path)
 
-        return "\n".join(
-            para.text
-            for para in doc.paragraphs
-        )
+        return "\n".join(para.text for para in doc.paragraphs)
 
     else:
         raise ValueError("Only PDF and DOCX files are supported.")
@@ -124,7 +121,8 @@ def ReadResume(file_path: Path):
 # Parse Job Description
 # ----------------------------
 
-def parse_job_description():
+
+def parse_job_description(jobDesc):
 
     response = client.chat.completions.create(
         model=model,
@@ -147,6 +145,7 @@ def parse_job_description():
 # ----------------------------
 # Parse Resume
 # ----------------------------
+
 
 def parse_resume(resume_text):
 
@@ -172,9 +171,11 @@ def parse_resume(resume_text):
 # Final Analysis
 # ----------------------------
 
-def final_score(parsed_resume):
 
-    parsed_JD = parse_job_description()
+def final_score(parsed_resume, parsed_JD):
+
+    parsed_JD = parse_job_description(jobDesc)
+    parsed_resume = parse_resume(parsed_resume)
 
     response = client.chat.completions.create(
         model=model,
