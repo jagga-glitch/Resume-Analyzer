@@ -12,8 +12,7 @@ from docx import Document
 from prompt import (
     system_prompt_HR,
     system_prompt_resume,
-    system_prompt_finalScore,
-    jobDesc,
+    system_prompt_finalScore
 )
 
 # ----------------------------
@@ -172,10 +171,10 @@ def parse_resume(resume_text):
 # ----------------------------
 
 
-def final_score(parsed_resume, parsed_JD):
+def final_score(resume_text, job_description):
 
-    parsed_JD = parse_job_description(jobDesc)
-    parsed_resume = parse_resume(parsed_resume)
+    # parsed_JD = parse_job_description(jobDesc)
+    parsed_resume = parse_resume(resume_text)
 
     response = client.chat.completions.create(
         model=model,
@@ -185,13 +184,13 @@ def final_score(parsed_resume, parsed_JD):
                 "role": "system",
                 "content": system_prompt_finalScore(
                     parsed_resume,
-                    parsed_JD,
+                    job_description,
                     ResumeAnalyzer.model_json_schema(),
                 ),
             },
             {
                 "role": "user",
-                "content": "Analyze this resume.",
+                "content": "Analyze this resume against the given job description..",
             },
         ],
     )
