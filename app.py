@@ -12,7 +12,7 @@ from resumeAnalyzer import (
 
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄", layout="wide")
 
-st.title("📄 AI Resume Analyzer")
+st.title("Hire Lens: AI-based Resume Analyzer")
 
 st.write("Upload your resume and paste the Job Description.")
 
